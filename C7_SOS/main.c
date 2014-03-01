@@ -1,5 +1,27 @@
+/*
+PURPOSE
+
+In Lab7 you will learn how to write software that reads from two switches, makes decisions, and outputs to an LED. You will learn and understand the steps required to initialize parallel ports.
+
+SYSTEM REQUIREMENTS
+
+The Lab7 starter project is the same as C7_SOS example but includes the connections to the Lab7 grader. You will make three changes. First, you will modify the system so a yellow SOS is flashed instead of the green. Yellow is created by mixing red and green (PF3 high, PF2 low, and PF1 high). Second, make the SOS flash only if both switches SW1 and SW2 are pressed (this means both PF4 and PF0 inputs are 0). Third, you will decrease the time between SOS outputs from 5 to 4 seconds. In summary the system should perform these steps:
+
+1) Make PF1, PF2, and PF3 outputs.
+     Make PF0 and PF4 inputs (enable PUR for PF0 and PF4).
+2) If either SW1 or SW2 are off, the LEDs should be off.
+    If both SW1 and SW2 are on, the SOS is sent on the yellow LED
+            a) Send an ‘S’ as short short short pulses on the yellow LED
+            b) Send an ‘O’ as long long long pulses on the yellow LED
+            c) Send an ‘S’ as short short short pulses on the yellow LED
+            d) Wait 4 seconds
+3) Repeat step 2 over and over.
+*/
+
 // 0.Documentation Section 
 // C7_SOS, main.c
+
+
 
 // Runs on LM4F120 or TM4C123 LaunchPad
 // Input from PF4(SW1) and PF0(SW2), output to PF3 (Green LED)
