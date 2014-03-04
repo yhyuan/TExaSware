@@ -2,13 +2,13 @@
 // Lab7_SOS, main.c
 
 // Runs on LM4F120 or TM4C123 LaunchPad
-// Input from PF4(SW1) and PF0(SW2), output to PF3 (Green LED)
-// Pressing SW1 starts SOS (Green LED flashes SOS).
+// Input from PF4(SW1) and PF0(SW2), output to PF3, PF2, PF1 (LED)
+// Pressing SW1, SW2 starts SOS (Yellow LED flashes SOS).
 //    S: Toggle light 3 times with 1/2 sec gap between ON....1/2sec....OFF
 //    O: Toggle light 3 times with 2 sec gap between ON....2sec....OFF
 //    S: Toggle light 3 times with 1/2 sec gap between ON....1/2sec....OFF
 //    4 second delay between SOS
-// Pressing SW2 stops SOS
+// Releasing SW1, SW2 stops SOS
 
 // Authors: Daniel Valvano, Jonathan Valvano and Ramesh Yerraballi
 // Date: July 15, 2013
@@ -45,13 +45,12 @@ int main(void){
   PortF_Init(); // Init port PF4 PF2 PF0    
   EnableInterrupts();           // enable interrupts for the grader
   while(1){
-    do{
-      SW1 = GPIO_PORTF_DATA_R&0x10; // PF4 into SW1
-    }while(SW1 == 0x10);
-    do{
+    SW1 = GPIO_PORTF_DATA_R&0x11; // PF0, PF4 into SW1
+    if (SW1 == 0x00) {
       FlashSOS();
-		  SW2 = GPIO_PORTF_DATA_R&0x01; // PF0 into SW2
-		}while(SW2 == 0x01);
+    } else {
+      GPIO_PORTF_DATA_R &= ~0x0E;
+    }
   }
 }
 // Subroutine to initialize port F pins for input and output
@@ -67,7 +66,7 @@ void PortF_Init(void){ volatile unsigned long delay;
   GPIO_PORTF_AMSEL_R &= 0x00;        // 3) disable analog function
   GPIO_PORTF_PCTL_R &= 0x00000000;   // 4) GPIO clear bit PCTL  
   GPIO_PORTF_DIR_R &= ~0x11;          // 5.1) PF4,PF0 input, 
-  GPIO_PORTF_DIR_R |= 0x08;          // 5.2) PF3 output  
+  GPIO_PORTF_DIR_R |= 0x0E;          // 5.2) PF1,PF2,PF3 output  
   GPIO_PORTF_AFSEL_R &= 0x00;        // 6) no alternate function
   GPIO_PORTF_PUR_R |= 0x11;          // enable pullup resistors on PF4,PF0       
   GPIO_PORTF_DEN_R |= 0x1F;          // 7) enable digital pins PF4-PF0     
@@ -91,27 +90,27 @@ void PortF_Init(void){ volatile unsigned long delay;
 // Notes: ...
 void FlashSOS(void){
   //S
-  GPIO_PORTF_DATA_R |= 0x08;  delay(1);
-  GPIO_PORTF_DATA_R &= ~0x08; delay(1);
-  GPIO_PORTF_DATA_R |= 0x08;  delay(1);
-  GPIO_PORTF_DATA_R &= ~0x08; delay(1);
-  GPIO_PORTF_DATA_R |= 0x08;  delay(1);
-  GPIO_PORTF_DATA_R &= ~0x08; delay(1);
+  GPIO_PORTF_DATA_R |= 0x0A;  delay(1);
+  GPIO_PORTF_DATA_R &= ~0x0A; delay(1);
+  GPIO_PORTF_DATA_R |= 0x0A;  delay(1);
+  GPIO_PORTF_DATA_R &= ~0x0A; delay(1);
+  GPIO_PORTF_DATA_R |= 0x0A;  delay(1);
+  GPIO_PORTF_DATA_R &= ~0x0A; delay(1);
   //O
-  GPIO_PORTF_DATA_R |= 0x08; delay(4);
-  GPIO_PORTF_DATA_R &= ~0x08;delay(4);
-  GPIO_PORTF_DATA_R |= 0x08; delay(4);
-  GPIO_PORTF_DATA_R &= ~0x08;delay(4);
-  GPIO_PORTF_DATA_R |= 0x08; delay(4);
-  GPIO_PORTF_DATA_R &= ~0x08;delay(4);
+  GPIO_PORTF_DATA_R |= 0x0A; delay(4);
+  GPIO_PORTF_DATA_R &= ~0x0A;delay(4);
+  GPIO_PORTF_DATA_R |= 0x0A; delay(4);
+  GPIO_PORTF_DATA_R &= ~0x0A;delay(4);
+  GPIO_PORTF_DATA_R |= 0x0A; delay(4);
+  GPIO_PORTF_DATA_R &= ~0x0A;delay(4);
   //S
-  GPIO_PORTF_DATA_R |= 0x08; delay(1);
-  GPIO_PORTF_DATA_R &= ~0x08;delay(1);
-  GPIO_PORTF_DATA_R |= 0x08; delay(1);
-  GPIO_PORTF_DATA_R &= ~0x08;delay(1);
-  GPIO_PORTF_DATA_R |= 0x08; delay(1);
-  GPIO_PORTF_DATA_R &= ~0x08;delay(1);
-  delay(10); // Delay for 5 secs in between flashes 
+  GPIO_PORTF_DATA_R |= 0x0A; delay(1);
+  GPIO_PORTF_DATA_R &= ~0x0A;delay(1);
+  GPIO_PORTF_DATA_R |= 0x0A; delay(1);
+  GPIO_PORTF_DATA_R &= ~0x0A;delay(1);
+  GPIO_PORTF_DATA_R |= 0x0A; delay(1);
+  GPIO_PORTF_DATA_R &= ~0x0A;delay(1);
+  delay(8); // Delay for 4 secs in between flashes 
 
 }
 
