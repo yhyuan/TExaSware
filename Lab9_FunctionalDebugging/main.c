@@ -99,7 +99,7 @@ int main(void){  unsigned long i,last,now;
       GPIO_PORTF_DATA_R &= ~0x02;    //If both PF4 and PF0 switch are not pressed, the PF1 output should be low. 
     }
     current = GPIO_PORTF_DATA_R&0x13;
-    if((previous != current) && (i<50){
+    if((previous != current) && (i<50)){
       now = NVIC_ST_CURRENT_R;
       Time[i] = (last-now)&0x00FFFFFF;  // 24-bit time difference
       Data[i] = GPIO_PORTF_DATA_R&0x13; // record PF1
