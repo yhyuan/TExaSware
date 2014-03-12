@@ -27,8 +27,9 @@
 // Linked data structure
 struct State {
   unsigned long Out;
+  unsigned long OutPF;
   unsigned long Time; 
-  unsigned long Next[4];};
+  unsigned long Next[8];};
 typedef const struct State STyp;
 #define goN   0
 #define waitN 1
@@ -41,6 +42,9 @@ STyp FSM[4]={
  {0x14, 500,{goN,goN,goN,goN}}};
 unsigned long S;  // index to the current state
 unsigned long Input;
+unsigned long Output;
+unsigned long PF13;
+unsigned long PF;
 
 // FUNCTION PROTOTYPES: Each subroutine defined
 void DisableInterrupts(void); // Disable interrupts
@@ -113,13 +117,14 @@ void PortBEF_Init(void){ volatile unsigned long delay;
 
 int main(void){ 
   TExaS_Init(SW_PIN_PE210, LED_PIN_PB543210); // activate grader and set system clock to 80 MHz
-  PLL_Init();       // 80 MHz, Program 10.1
+  //PLL_Init();       // 80 MHz, Program 10.1
   SysTick_Init();   // Program 10.2
   PortBEF_Init();   // initialize PB,PE,PF
   S = goN;  
   EnableInterrupts();
   while(1){
-	LIGHT = FSM[S].Out;  // set lights
+	  LIGHT = FSM[S].Out;  // set lights
+    GPIO_PORTF_DATA_R = (GPIO_PORTF_DATA_R & (~0x0A)) | FSM[S].Out; // set PF1 and PF3
     SysTick_Wait10ms(FSM[S].Time);
     Input = SENSOR;     // read sensors
     S = FSM[S].Next[Input];  
