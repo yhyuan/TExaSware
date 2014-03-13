@@ -31,20 +31,35 @@ struct State {
   unsigned long Time; 
   unsigned long Next[8];};
 typedef const struct State STyp;
-#define goN   0
-#define waitN 1
-#define goE   2
-#define waitE 3
-STyp FSM[4]={
+#define goW   0
+#define waitW 1
+#define goS   2
+#define waitS 3
+#define walk  4
+#define notWalk  5
+#define walkOff  6
+#define notWalk2  7
+#define walkOff2  8
+
+/*STyp FSM[4]={
  {0x21,3000,{goN,waitN,goN,waitN}},
  {0x22, 500,{goE,goE,goE,goE}},
  {0x0C,3000,{goE,goE,waitE,waitE}},
  {0x14, 500,{goN,goN,goN,goN}}};
+*/ 
+STyp FSM[9]={
+ {0x0C, 0x02, 400,{     goW,     goW,   waitW,   waitW,   waitW,   waitW,   waitW,  waitW}},  //goW
+ {0x14, 0x02, 60, {   waitW,     goW,     goS,     goS,    walk,    walk,     goS,    goS}}, //waitW
+ {0x21, 0x02, 400,{     goS,   waitS,     goS,   waitS,   waitS,   waitS,   waitS,  waitS}},  //goS
+ {0x22, 0x02, 60, {   waitS,     goW,     goS,     goW,    walk,    walk,    walk,   walk}}, //waitS
+ {0x24, 0x08, 400,{    walk, notWalk, notWalk, notWalk,    walk, notWalk, notWalk,notWalk}},  //walk
+ {0x24, 0x02, 60, { walkOff, walkOff, walkOff, walkOff, walkOff, walkOff, walkOff,walkOff}},  //notWalk
+ {0x24, 0x00, 60, {notWalk2,notWalk2,notWalk2,notWalk2,notWalk2,notWalk2,notWalk2,notWalk2}},  //walkOff
+ {0x24, 0x02, 60, {walkOff2,walkOff2,walkOff2,walkOff2,walkOff2,walkOff2,walkOff2,walkOff2}},  //notWalk2
+ {0x24, 0x00, 60, {notWalk2,     goW,     goS,     goW,    walk,     goW,     goS,     goW}}};  //walkOff2
+
 unsigned long S;  // index to the current state
 unsigned long Input;
-unsigned long Output;
-unsigned long PF13;
-unsigned long PF;
 
 // FUNCTION PROTOTYPES: Each subroutine defined
 void DisableInterrupts(void); // Disable interrupts
@@ -124,7 +139,7 @@ int main(void){
   EnableInterrupts();
   while(1){
 	  LIGHT = FSM[S].Out;  // set lights
-    GPIO_PORTF_DATA_R = (GPIO_PORTF_DATA_R & (~0x0A)) | FSM[S].Out; // set PF1 and PF3
+    GPIO_PORTF_DATA_R = (GPIO_PORTF_DATA_R & (~0x0A)) | FSM[S].OutPF; // set PF1 and PF3
     SysTick_Wait10ms(FSM[S].Time);
     Input = SENSOR;     // read sensors
     S = FSM[S].Next[Input];  
