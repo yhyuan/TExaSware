@@ -48,15 +48,15 @@ typedef const struct State STyp;
  {0x14, 500,{goN,goN,goN,goN}}};
 */ 
 STyp FSM[9]={
- {0x0C, 0x02, 400,{     goW,     goW,   waitW,   waitW,   waitW,   waitW,   waitW,  waitW}},  //goW
+ {0x0C, 0x02, 100,{     goW,     goW,   waitW,   waitW,   waitW,   waitW,   waitW,  waitW}},  //goW
  {0x14, 0x02, 60, {   waitW,     goW,     goS,     goS,    walk,    walk,     goS,    goS}}, //waitW
- {0x21, 0x02, 400,{     goS,   waitS,     goS,   waitS,   waitS,   waitS,   waitS,  waitS}},  //goS
+ {0x21, 0x02, 100,{     goS,   waitS,     goS,   waitS,   waitS,   waitS,   waitS,  waitS}},  //goS
  {0x22, 0x02, 60, {   waitS,     goW,     goS,     goW,    walk,    walk,    walk,   walk}}, //waitS
- {0x24, 0x08, 400,{    walk, notWalk, notWalk, notWalk,    walk, notWalk, notWalk,notWalk}},  //walk
- {0x24, 0x02, 60, { walkOff, walkOff, walkOff, walkOff, walkOff, walkOff, walkOff,walkOff}},  //notWalk
- {0x24, 0x00, 60, {notWalk2,notWalk2,notWalk2,notWalk2,notWalk2,notWalk2,notWalk2,notWalk2}},  //walkOff
- {0x24, 0x02, 60, {walkOff2,walkOff2,walkOff2,walkOff2,walkOff2,walkOff2,walkOff2,walkOff2}},  //notWalk2
- {0x24, 0x00, 60, {notWalk2,     goW,     goS,     goW,    walk,     goW,     goS,     goW}}};  //walkOff2
+ {0x24, 0x08, 100,{    walk, notWalk, notWalk, notWalk,    walk, notWalk, notWalk,notWalk}},  //walk
+ {0x24, 0x02, 60, { notWalk, walkOff, walkOff, walkOff, walkOff, walkOff, walkOff,walkOff}},  //notWalk
+ {0x24, 0x00, 60, {walkOff,notWalk2,notWalk2,notWalk2,notWalk2,notWalk2,notWalk2,notWalk2}},  //walkOff
+ {0x24, 0x02, 60, {notWalk2,walkOff2,walkOff2,walkOff2,walkOff2,walkOff2,walkOff2,walkOff2}},  //notWalk2
+ {0x24, 0x00, 60, {walkOff2,     goW,     goS,     goW,    walk,     goW,     goS,     goW}}};  //walkOff2
 
 unsigned long S;  // index to the current state
 unsigned long Input;
@@ -66,6 +66,7 @@ void DisableInterrupts(void); // Disable interrupts
 void EnableInterrupts(void);  // Enable interrupts
 
 // ***** 3. Subroutines Section *****
+ /*
 void PLL_Init(void){
   // 0) Use RCC2
   SYSCTL_RCC2_R |=  0x80000000;  // USERCC2
@@ -86,7 +87,7 @@ void PLL_Init(void){
   // 6) enable use of PLL by clearing BYPASS
   SYSCTL_RCC2_R &= ~0x00000800;
 }
-
+*/
 void SysTick_Init(void){
   NVIC_ST_CTRL_R = 0;               // disable SysTick during setup
   NVIC_ST_CTRL_R = 0x00000005;      // enable SysTick with core clock
@@ -115,6 +116,7 @@ void PortBEF_Init(void){ volatile unsigned long delay;
   GPIO_PORTE_PCTL_R &= ~0x00000FFF; // 4) enable regular GPIO
   GPIO_PORTE_DIR_R &= ~0x07;   // 5) inputs on PE2-0
   GPIO_PORTE_AFSEL_R &= ~0x07; // 6) regular function on PE2-0
+	//GPIO_PORTE_PUR_R |= 0x07; 
   GPIO_PORTE_DEN_R |= 0x07;    // 7) enable digital on PE2-0
 
   GPIO_PORTB_AMSEL_R &= ~0x3F; // 3) disable analog function on PB5-0
@@ -135,13 +137,15 @@ int main(void){
   //PLL_Init();       // 80 MHz, Program 10.1
   SysTick_Init();   // Program 10.2
   PortBEF_Init();   // initialize PB,PE,PF
-  S = goN;  
+  S = goW;  
   EnableInterrupts();
   while(1){
 	  LIGHT = FSM[S].Out;  // set lights
     GPIO_PORTF_DATA_R = (GPIO_PORTF_DATA_R & (~0x0A)) | FSM[S].OutPF; // set PF1 and PF3
+		//GPIO_PORTF_DATA_R = FSM[S].OutPF;
     SysTick_Wait10ms(FSM[S].Time);
-    Input = SENSOR;     // read sensors
+		Input = GPIO_PORTE_DATA_R;
+    //Input = SENSOR;     // read sensors
     S = FSM[S].Next[Input];  
   }
 }
