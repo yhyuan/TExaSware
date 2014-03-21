@@ -123,7 +123,11 @@ char character;
 // Output: none
 void UART_OutString(unsigned char buffer[]){
 // as part of Lab 11 implement this function
-
+	int count = 0;
+	while(buffer[count] != '\0'){
+	  UART_OutChar(buffer[count]);
+		count++;
+	}
 }
 
 unsigned char String[10];
@@ -140,7 +144,34 @@ unsigned char String[10];
 //10000 to "**** "  any value larger than 9999 converted to "**** "
 void UART_ConvertUDec(unsigned long n){
 // as part of Lab 11 implement this function
-  
+  if(n < 10) {
+		String[0] = ' ';
+		String[1] = ' ';
+		String[2] = ' ';
+		String[3] = n + '0';
+	} else if (n < 100) {
+		String[0] = ' ';
+		String[1] = ' ';
+		String[2] = n/10 + '0';
+		String[3] = (n%10) + '0';
+	} else if (n < 1000) {
+		String[0] = ' ';
+		String[1] = n/100 + '0';
+		String[2] = (n%100)/10 + '0';
+		String[3] = (n%10) + '0';
+	} else if (n < 10000) {
+		String[0] = n/1000 + '0';
+		String[1] = (n%1000)/100 + '0';
+		String[2] = (n%100)/10 + '0';
+		String[3] = (n%10) + '0';
+	} else {
+		String[0] = '*';
+		String[1] = '*';
+		String[2] = '*';
+		String[3] = '*';
+	}
+	String[4] = ' ';
+	String[5] = '\0';	
 }
 
 //-----------------------UART_OutUDec-----------------------
@@ -166,7 +197,37 @@ void UART_OutUDec(unsigned long n){
 //10000 to "*.*** cm"  any value larger than 9999 converted to "*.*** cm"
 void UART_ConvertDistance(unsigned long n){
 // as part of Lab 11 implement this function
-  
+  if(n < 10) {
+		String[0] = '0';
+		String[2] = '0';
+		String[3] = '0';
+		String[4] = n + '0';
+	} else if (n < 100) {
+		String[0] = '0';
+		String[2] = '0';
+		String[3] = n/10 + '0';
+		String[4] = (n%10) + '0';
+	} else if (n < 1000) {
+		String[0] = '0';
+		String[2] = n/100 + '0';
+		String[3] = (n%100)/10 + '0';
+		String[4] = (n%10) + '0';
+	} else if (n < 10000) {
+		String[0] = n/1000 + '0';
+		String[2] = (n%1000)/100 + '0';
+		String[3] = (n%100)/10 + '0';
+		String[4] = (n%10) + '0';
+	} else {
+		String[0] = '*';
+		String[2] = '*';
+		String[3] = '*';
+		String[4] = '*';
+	}
+	String[1] = '.';
+	String[5] = ' ';
+	String[6] = 'c';
+	String[7] = 'm';
+	String[8] = '\0';
 }
 
 //-----------------------UART_OutDistance-----------------------
