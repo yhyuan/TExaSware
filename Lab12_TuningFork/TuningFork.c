@@ -44,14 +44,52 @@ void DisableInterrupts(void); // Disable interrupts
 void EnableInterrupts(void);  // Enable interrupts
 void WaitForInterrupt(void);  // low power mode
 
-// input from PA3, output from PA2, SysTick interrupts
-void Sound_Init(void){ 
 
+struct State {
+  unsigned long Out;
+  unsigned long Next[2];};
+typedef const struct State STyp;
+#define S0 0
+#define S1 1
+#define S2 2
+#define S3 3
+STyp FSM[4]={
+ {0x00,{S0,S1}},
+ {0x01,{S2,S1}},
+ {0x01,{S2,S3}},
+ {0x00,{S0,S3}}};
+unsigned long S;  // index to the current state
+unsigned long Input;
+ 
+unsigned long beeping;
+// input from PA3, output from PA2, SysTick interrupts
+void Sound_Init(void){ unsigned long volatile delay;
+  SYSCTL_RCGC2_R |= 0x00000001; // activate port A
+  delay = SYSCTL_RCGC2_R;
+  GPIO_PORTA_AMSEL_R &= ~0x0C;      // no analog on PA2, PA3
+  GPIO_PORTA_PCTL_R &= ~0x0000FF00; // regular function on PA2, PA3
+  GPIO_PORTA_DIR_R |= 0x04;     // make PA2 out
+	GPIO_PORTA_DIR_R &= ~0x08;     // make PA3 in
+  GPIO_PORTA_DR8R_R |= 0x0C;    // can drive up to 8mA out on PA2, PA3
+  GPIO_PORTA_AFSEL_R &= ~0x0C;  // disable alt funct on PA2, PA3
+  GPIO_PORTA_DEN_R |= 0x0C;     // enable digital I/O on PA2, PA3
+	GPIO_PORTA_DATA_R &= ~0x0C;   // make PA2, PA3 low
+	
+  NVIC_ST_CTRL_R = 0;           // disable SysTick during setup
+  NVIC_ST_RELOAD_R = 90908;     // reload value for 1.13635ms (assuming 80MHz)
+  NVIC_ST_CURRENT_R = 0;        // any write to current clears it
+  NVIC_SYS_PRI3_R = NVIC_SYS_PRI3_R&0x00FFFFFF; // priority 0               
+  NVIC_ST_CTRL_R = 0x00000007;  // enable with core clock and interrupts
+	
+	//beeping = 0x00;
+	S = S0;
 }
 
 // called at 880 Hz
 void SysTick_Handler(void){
-
+	if (beeping) {
+		GPIO_PORTA_DATA_R ^= 0x04;     // toggle PA2
+	}
 }
 
 int main(void){// activate grader and set system clock to 80 MHz
@@ -61,5 +99,8 @@ int main(void){// activate grader and set system clock to 80 MHz
   while(1){
     // main program is free to perform other tasks
     // do not use WaitForInterrupt() here, it may cause the TExaS to crash
+		beeping = FSM[S].Out;
+		Input = (GPIO_PORTA_DATA_R & 0x08) >> 3;
+    S = FSM[S].Next[Input];  
   }
 }
