@@ -83,13 +83,13 @@ int main(void){ // Real Lab13
 		//EnableInterrupts();
 		unsigned long piano = Piano_In();
 		if (piano == 0x01) {
-		  Sound_Tone(C0*2);
+		  Sound_Tone(C0);
 		} else if (piano == 0x02) {
-		  Sound_Tone(D*2);
+		  Sound_Tone(D);
 		} else if (piano == 0x04) {
-		  Sound_Tone(E*2);
+		  Sound_Tone(E);
 		} else if (piano == 0x08) {
-		  Sound_Tone(G*2);
+		  Sound_Tone(G);
 		} else {
 		  Sound_Off();
 		}
