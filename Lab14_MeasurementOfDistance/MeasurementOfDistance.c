@@ -50,16 +50,29 @@ unsigned long Flag;     // 1 means valid Distance, 0 means Distance is empty
 // Input: sample  12-bit ADC sample
 // Output: 32-bit distance (resolution 0.001cm)
 unsigned long Convert(unsigned long sample){
-  return 0;  // replace this line with real code
+  //return 0;  // replace this line with real code
+	
+	//return ((500.1221*ADCdata)>>10)+0;
+	return ((500*ADCdata)>>10)+1;
+	//return long(2000 * ADCdata/4095.0);
 }
 
 // Initialize SysTick interrupts to trigger at 40 Hz, 25 ms
 void SysTick_Init(unsigned long period){
-
+	NVIC_ST_CTRL_R = 0;         // disable SysTick during setup
+  NVIC_ST_RELOAD_R = period-1;// reload value
+  NVIC_ST_CURRENT_R = 0;      // any write to current clears it
+  NVIC_SYS_PRI3_R = (NVIC_SYS_PRI3_R&0x00FFFFFF)|0x40000000;           
+  NVIC_ST_CTRL_R = 0x07; // enable SysTick with core clock and interrupts
 }
 // executes every 25 ms, collects a sample, converts and stores in mailbox
 void SysTick_Handler(void){ 
-
+	GPIO_PORTF_DATA_R ^= 0x02;      //1) Toggle PF1 
+	GPIO_PORTF_DATA_R ^= 0x02;      //2) Toggle PF1 again 
+	ADCdata = ADC0_In();						//3) Sample the ADC, calling your ADC0_In() 
+	Distance = Convert(ADCdata);		//4) Convert the sample to Distance, calling your Convert(), and storing the result into the global 
+	Flag = 1;												//5) Set the Flag, signifying new data is ready 
+	GPIO_PORTF_DATA_R ^= 0x02;      //6) Toggle PF1 a third time
 }
 
 //-----------------------UART_ConvertDistance-----------------------
@@ -75,9 +88,49 @@ void SysTick_Handler(void){
 //10000 to "*.*** cm"  any value larger than 9999 converted to "*.*** cm"
 void UART_ConvertDistance(unsigned long n){
 // as part of Lab 11 you implemented this function
-
+  if(n < 10) {
+		String[0] = '0';
+		String[2] = '0';
+		String[3] = '0';
+		String[4] = n + '0';
+	} else if (n < 100) {
+		String[0] = '0';
+		String[2] = '0';
+		String[3] = n/10 + '0';
+		String[4] = (n%10) + '0';
+	} else if (n < 1000) {
+		String[0] = '0';
+		String[2] = n/100 + '0';
+		String[3] = (n%100)/10 + '0';
+		String[4] = (n%10) + '0';
+	} else if (n < 10000) {
+		String[0] = n/1000 + '0';
+		String[2] = (n%1000)/100 + '0';
+		String[3] = (n%100)/10 + '0';
+		String[4] = (n%10) + '0';
+	} else {
+		String[0] = '*';
+		String[2] = '*';
+		String[3] = '*';
+		String[4] = '*';
+	}
+	String[1] = '.';
+	String[5] = ' ';
+	String[6] = 'c';
+	String[7] = 'm';
+	String[8] = '\0';
 }
-int main(void){ 
+
+void PF1_Init(void) {
+	SYSCTL_RCGC2_R |= 0x00000020; // activate port F
+  GPIO_PORTF_DIR_R |= 0x02;   // make PF1 output (PF1 built-in LED)
+  GPIO_PORTF_AFSEL_R &= ~0x02;// disable alt funct on PF1
+  GPIO_PORTF_DEN_R |= 0x02;   // enable digital I/O on PF1
+  GPIO_PORTF_PCTL_R = (GPIO_PORTF_PCTL_R&0xFFFFFF0F)+0x00000000;
+  GPIO_PORTF_AMSEL_R &= ~0x02;     // disable analog functionality on PF1
+}
+
+int main1(void){ 
   volatile unsigned long delay;
   TExaS_Init(ADC0_AIN1_PIN_PE2, SSI0_Real_Nokia5110_Scope);
 // initialize ADC0, channel 1, sequencer 3
@@ -94,15 +147,16 @@ int main(void){
   }
 }
 
-int main1(void){ 
+int main2(void){ 
   TExaS_Init(ADC0_AIN1_PIN_PE2, SSI0_Real_Nokia5110_Scope);
   ADC0_Init();    // initialize ADC0, channel 1, sequencer 3
   EnableInterrupts();
   while(1){ 
     ADCdata = ADC0_In();
+		//Distance = Convert(ADCdata);
   }
 }
-int main2(void){ 
+int main3(void){ 
   TExaS_Init(ADC0_AIN1_PIN_PE2, SSI0_Real_Nokia5110_NoScope);
   ADC0_Init();    // initialize ADC0, channel 1, sequencer 3
   Nokia5110_Init();             // initialize Nokia5110 LCD
@@ -116,3 +170,19 @@ int main2(void){
   }
 }
 
+int main(void){ 
+  TExaS_Init(ADC0_AIN1_PIN_PE2, SSI0_Real_Nokia5110_NoScope);
+  ADC0_Init();    // initialize ADC0, channel 1, sequencer 3
+  Nokia5110_Init();             // initialize Nokia5110 LCD
+	SysTick_Init(16000 * 25 * 5);  //initialize SysTick for 40 Hz interrupts
+	PF1_Init();
+  EnableInterrupts();
+  while(1){ 
+		Flag = 0; 			//Clear the Flag to 0 
+    while(!Flag);		//Wait for the Flag to be set 
+		UART_ConvertDistance(Distance);//Convert Distance to String, calling your UART_ConvertDistance() 
+		Nokia5110_SetCursor(0, 0);//Optional: output the string 
+		Nokia5110_OutString(String); //    a) Nokia5110_SetCursor(0, 0); Nokia5110_OutString(String); 
+										//    b) UART_OutString(String); UART_OutChar('\n');		
+  }
+}
